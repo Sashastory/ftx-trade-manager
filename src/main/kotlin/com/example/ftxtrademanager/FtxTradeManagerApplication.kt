@@ -10,6 +10,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.client.ClientHttpRequestExecution
 import org.springframework.http.client.ClientHttpRequestInterceptor
 import org.springframework.http.client.ClientHttpResponse
+import org.springframework.stereotype.Component
+import org.springframework.vault.core.VaultKeyValueOperationsSupport
+import org.springframework.vault.core.VaultTemplate
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.RestTemplate
@@ -19,9 +22,9 @@ import javax.crypto.spec.SecretKeySpec
 @SpringBootApplication
 class FtxTradeManagerApplication {
     @Bean
-    fun restTemplate(): RestTemplate {
+    fun restTemplate(interceptor: CustomHttpRequestInterceptor): RestTemplate {
         return RestTemplateBuilder()
-                .additionalInterceptors(CustomHttpRequestInterceptor)
+                .additionalInterceptors(interceptor)
                 .build()
     }
 }
@@ -30,10 +33,12 @@ fun main(args: Array<String>) {
     runApplication<FtxTradeManagerApplication>(*args)
 }
 
-object CustomHttpRequestInterceptor : ClientHttpRequestInterceptor {
+@Component
+class CustomHttpRequestInterceptor(
+        val vaultTemplate: VaultTemplate
+) : ClientHttpRequestInterceptor {
     private val BALANCE_PATH = "/api/wallet/balances"
     private val API_KEY = "6VGOx6WqwH1kTMsSXTqTM_3oR3N352V45Rfdg3rQ"
-    private val API_SECRET = "3HYfEYtRvO3KFIMGChQlaQTTlWXUjjPiXDOspUM7"
 
     override fun intercept(
             request: HttpRequest,
@@ -41,7 +46,16 @@ object CustomHttpRequestInterceptor : ClientHttpRequestInterceptor {
             execution: ClientHttpRequestExecution
     ): ClientHttpResponse {
         val sha256Mac = Mac.getInstance("HmacSHA256")
-        val secretKey = SecretKeySpec(API_SECRET.toByteArray(), "HmacSHA256")
+        val vaultResponse = vaultTemplate
+                .opsForKeyValue("secret", VaultKeyValueOperationsSupport.KeyValueBackend.KV_2)
+                .get("ftx-trade-manager")
+        var apiSecret = ""
+        vaultResponse?.let { vr ->
+            vr.data?.let { data ->
+                apiSecret = data["api-secret"].toString()
+            }
+        } ?: throw RuntimeException("No api secret present in vault")
+        val secretKey = SecretKeySpec(apiSecret.toByteArray(), "HmacSHA256")
         val ts = System.currentTimeMillis().toString()
         sha256Mac.init(secretKey)
         val signatureByteArray: ByteArray = "${ts}GET${BALANCE_PATH}".toByteArray()
