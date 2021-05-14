@@ -1,6 +1,5 @@
 package com.example.ftxtrademanager
 
-import com.example.ftxtrademanager.configuration.FtxHeadersHttpRequestInterceptor
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
 import org.springframework.boot.runApplication
@@ -12,7 +11,7 @@ import org.springframework.web.client.RestTemplate
 @SpringBootApplication
 class FtxTradeManagerApplication {
     @Bean
-    fun restTemplate(interceptor: FtxHeadersHttpRequestInterceptor): RestTemplate {
+    fun restTemplate(): RestTemplate {
         return RestTemplateBuilder()
                 .build()
     }
