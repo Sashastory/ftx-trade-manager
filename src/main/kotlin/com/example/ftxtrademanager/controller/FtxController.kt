@@ -2,6 +2,7 @@ package com.example.ftxtrademanager.controller
 
 import com.example.ftxtrademanager.hmac.HmacSha256SignatureWriter
 import com.example.ftxtrademanager.model.BalanceResponse
+import com.example.ftxtrademanager.model.OpenOrderResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -9,6 +10,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
 import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.client.RestTemplate
 
@@ -34,5 +36,28 @@ class FtxController(
         }
         val request = HttpEntity<MultiValueMap<String, String>>(headers)
         return restTemplate.exchange("${url}${balancePath}", HttpMethod.GET, request, BalanceResponse::class.java)
+    }
+
+    @GetMapping("open-orders")
+    fun getOpenOrders(
+            @RequestParam("market", required = false) market: String?
+    ): ResponseEntity<OpenOrderResponse> {
+        var defaultOpenOrdersPath = "/api/orders"
+        market?.let {
+            defaultOpenOrdersPath += "?market=${market}"
+        } ?: defaultOpenOrdersPath
+        val ts = System.currentTimeMillis().toString()
+        val headers = HttpHeaders().apply {
+            set("FTX-KEY", apiKey)
+            set("FTX-TS", ts)
+            set("FTX-SIGN", signatureWriter.writeSignature(ts, HttpMethod.GET, defaultOpenOrdersPath))
+        }
+        val request = HttpEntity<MultiValueMap<String, String>>(headers)
+        return restTemplate.exchange(
+                "${url}${defaultOpenOrdersPath}",
+                HttpMethod.GET,
+                request,
+                OpenOrderResponse::class.java
+        )
     }
 }

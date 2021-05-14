@@ -2,3 +2,8 @@ GET http://localhost:8080/balances
 Accept: application/json
 
 ###
+
+GET http://localhost:8080/open-orders?market=LTC-PERP
+Accept: application/json
+
+###
