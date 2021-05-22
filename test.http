@@ -3,7 +3,12 @@ Accept: application/json
 
 ###
 
-GET http://localhost:8080/open-orders?market=LTC-PERP
+GET http://localhost:8080/open-orders
+Accept: application/json
+
+###
+
+GET http://localhost:8080/positions
 Accept: application/json
 
 ###

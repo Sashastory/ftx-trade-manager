@@ -3,6 +3,7 @@ package com.example.ftxtrademanager.controller
 import com.example.ftxtrademanager.hmac.HmacSha256SignatureWriter
 import com.example.ftxtrademanager.model.BalanceResponse
 import com.example.ftxtrademanager.model.OpenOrderResponse
+import com.example.ftxtrademanager.model.PositionResponse
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
@@ -58,6 +59,29 @@ class FtxController(
                 HttpMethod.GET,
                 request,
                 OpenOrderResponse::class.java
+        )
+    }
+
+    @GetMapping("positions")
+    fun getPositions(
+            @RequestParam("showAvgPrice", required = false) showAvgPrice: Boolean?
+    ): ResponseEntity<PositionResponse> {
+        var defaultPositionsPath = "/api/positions"
+        showAvgPrice?.let {
+            defaultPositionsPath += "?showAvgPrice=${showAvgPrice}"
+        } ?: defaultPositionsPath
+        val ts = System.currentTimeMillis().toString()
+        val headers = HttpHeaders().apply {
+            set("FTX-KEY", apiKey)
+            set("FTX-TS", ts)
+            set("FTX-SIGN", signatureWriter.writeSignature(ts, HttpMethod.GET, defaultPositionsPath))
+        }
+        val request = HttpEntity<MultiValueMap<String, String>>(headers)
+        return restTemplate.exchange(
+                "${url}${defaultPositionsPath}",
+                HttpMethod.GET,
+                request,
+                PositionResponse::class.java
         )
     }
 }
