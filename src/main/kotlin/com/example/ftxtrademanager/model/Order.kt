@@ -1,6 +1,6 @@
 package com.example.ftxtrademanager.model
 
-data class OpenOrder(
+data class Order(
         val id: Number,
         val market: String,
         val type: String,
