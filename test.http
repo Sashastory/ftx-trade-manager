@@ -8,7 +8,17 @@ Accept: application/json
 
 ###
 
-GET http://localhost:8080/positions
+GET http://localhost:8080/positions?showAvgPrice=true
+Accept: application/json
+
+###
+
+GET http://localhost:8080/order-history?market=BTC-PERP&start_time=1621026000000
+Accept: application/json
+
+###
+
+GET http://localhost:8080/order-history?market=DOGE-PERP
 Accept: application/json
 
 ###
